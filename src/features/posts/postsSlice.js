@@ -1,11 +1,16 @@
-import { createSlice, nanoid, createAsyncThunk } from '@reduxjs/toolkit'
+import {
+  createSlice,
+  nanoid,
+  createAsyncThunk,
+  createSelector,
+} from '@reduxjs/toolkit'
 import { client } from '../../api/client'
 import { sub } from 'date-fns'
 
 const initialState = {
   posts: [],
   status: 'idle',
-  error: null
+  error: null,
 }
 
 export const fetchPosts = createAsyncThunk('posts/fetchPosts', async () => {
@@ -16,7 +21,7 @@ export const fetchPosts = createAsyncThunk('posts/fetchPosts', async () => {
 export const addNewPost = createAsyncThunk(
   'posts/addNewPost',
   // The payload creator receives the partial `{title, content, user}` object
-  async initialPost => {
+  async (initialPost) => {
     // We send the initial data to the fake API server
     const response = await client.post('/fakeApi/posts', initialPost)
     // The response includes the complete post object, including unique ID
@@ -30,7 +35,7 @@ const postsSlice = createSlice({
   reducers: {
     reactionAdded(state, action) {
       const { postId, reaction } = action.payload
-      const existingPost = state.posts.find(post => post.id === postId)
+      const existingPost = state.posts.find((post) => post.id === postId)
       if (existingPost) {
         existingPost.reactions[reaction]++
       }
@@ -53,7 +58,7 @@ const postsSlice = createSlice({
     },
     postUpdated(state, action) {
       const { id, title, content } = action.payload
-      const existingPost = state.posts.find(post => post.id === id)
+      const existingPost = state.posts.find((post) => post.id === id)
       if (existingPost) {
         existingPost.title = title
         existingPost.content = content
@@ -79,15 +84,19 @@ const postsSlice = createSlice({
         // We can directly add the new post object to our posts array
         state.posts.push(action.payload)
       })
-  }
+  },
 })
 
 export const { postAdded, postUpdated, reactionAdded } = postsSlice.actions
 
 export default postsSlice.reducer
 
-export const selectAllPosts = state => state.posts.posts
+export const selectAllPosts = (state) => state.posts.posts
 
 export const selectPostById = (state, postId) =>
-  state.posts.posts.find(post => post.id === postId)
+  state.posts.posts.find((post) => post.id === postId)
 
+export const selectPostsByUser = createSelector(
+  [selectAllPosts, (state, userId) => userId],
+  (posts, userId) => posts.filter((post) => post.user === userId)
+)
